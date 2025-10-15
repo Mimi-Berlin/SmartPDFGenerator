@@ -1,0 +1,8 @@
+venv/ 
+__pycache__/ 
+input_pdfs/ 
+output_pdfs/ 
+*.pyc 
+*.log 
+.DS_Store 
+Thumbs.db 
