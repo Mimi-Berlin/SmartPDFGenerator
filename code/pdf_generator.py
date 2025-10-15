@@ -347,7 +347,7 @@ def generate_html_type_b(df, summary_info):
 
 def generate_pdf(df, report_type, output_path, summary_info=None):
     """
-    מייצר קובץ HTML מהנתונים (שניתן להדפיס ל-PDF)
+    מייצר קובץ HTML מהנתונים
     
     Args:
         df (DataFrame): נתוני הדוח
@@ -373,13 +373,6 @@ def generate_pdf(df, report_type, output_path, summary_info=None):
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
         
-        print(f"\n📄 HTML נוצר: {output_path}")
-        print("💡 כדי להמיר ל-PDF:")
-        print("   1. פתחי את הקובץ HTML בדפדפן")
-        print("   2. לחצי Ctrl+P")
-        print("   3. בחרי 'Save as PDF' או 'Microsoft Print to PDF'")
-        print("   4. שמרי את הקובץ")
-        
         return True
         
     except Exception as e:
@@ -389,7 +382,7 @@ def generate_pdf(df, report_type, output_path, summary_info=None):
 
 def generate_simple_pdf(df, report_type, output_path, summary_info=None):
     """
-    מייצר PDF פשוט עם טבלה בסיסית (דורש fpdf2)
+    מייצר PDF פשוט עם טבלה בסיסית
     
     Args:
         df (DataFrame): נתוני הדוח
@@ -401,7 +394,6 @@ def generate_simple_pdf(df, report_type, output_path, summary_info=None):
         bool: האם ההפקה הצליחה
     """
     if not FPDF_AVAILABLE:
-        print("⚠️ fpdf2 לא מותקן. התקן עם: pip install fpdf2")
         return False
     
     try:
@@ -490,59 +482,8 @@ def generate_simple_pdf(df, report_type, output_path, summary_info=None):
         
         pdf.output(output_path)
         
-        print(f"\n📄 PDF פשוט נוצר: {output_path}")
-        
         return True
         
     except Exception as e:
-        print(f"שגיאה ביצירת PDF פשוט: {e}")
+        print(f"שגיאה ביצירת PDF: {e}")
         return False
-
-
-if __name__ == "__main__":
-    print("=" * 70)
-    print("בדיקת PDF Generator - יצירת HTML/PDF")
-    print("=" * 70)
-    
-    sample_data = {
-        'date': ['01/02/2023', '02/02/2023', '05/02/2023', '06/02/2023'],
-        'day': ['רביעי', 'חמישי', 'ראשון', 'שני'],
-        'location': ['גונן', 'גונן', 'גונן', 'גונן'],
-        'entry': ['08:15', '07:55', '08:10', '08:05'],
-        'exit': ['16:20', '16:10', '16:25', '17:30'],
-        'break': ['00:30', '00:35', '00:28', '00:30'],
-        'total': [7.75, 7.58, 7.88, 9.08],
-        'regular_100': [7.75, 7.58, 7.88, 8.00],
-        'overtime_125': [0.0, 0.0, 0.0, 1.00],
-        'overtime_150': [0.0, 0.0, 0.0, 0.08]
-    }
-    
-    df = pd.DataFrame(sample_data)
-    
-    print("\n📊 יוצר HTML לדוגמה (Type B)...")
-    
-    output_file = "../output_pdfs/test_report_type_b.html"
-    success = generate_pdf(df, 'TYPE_B', output_file)
-    
-    if success:
-        print(f"\n✅ HTML נוצר בהצלחה!")
-        print("פתחי את הקובץ בדפדפן כדי לראות את התוצאה!")
-    else:
-        print("\n❌ נכשל ביצירת HTML")
-    
-    if FPDF_AVAILABLE:
-        print("\n" + "=" * 70)
-        print("בדיקת PDF פשוט (ללא עיצוב)")
-        print("=" * 70)
-        
-        simple_output = "../output_pdfs/test_simple_report.pdf"
-        success_simple = generate_simple_pdf(df, 'TYPE_B', simple_output)
-        
-        if success_simple:
-            print("✅ PDF פשוט נוצר בהצלחה!")
-            print("פתחי את הקובץ PDF כדי לראות את התוצאה!")
-    else:
-        print("\n⚠️ fpdf2 לא מותקן - דלג על PDF פשוט")
-        print("להתקנה: pip install fpdf2")
-    
-    print("\n" + "=" * 70)

@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 import pandas as pd
 
+
 def calculate_hours_diff(start_time, end_time):
     """
     מחשב הפרש שעות בין זמנים
@@ -33,6 +34,7 @@ def calculate_hours_diff(start_time, end_time):
     except:
         return 0.0
 
+
 def clean_ocr_text(text):
     """
     מנקה טעויות OCR נפוצות
@@ -43,7 +45,6 @@ def clean_ocr_text(text):
     Returns:
         str: טקסט מנוקה
     """
-    # החלפת תווים שגויים נפוצים
     replacements = {
         '|': ' ',
         '‎': '',
@@ -65,10 +66,10 @@ def clean_ocr_text(text):
     for old, new in replacements.items():
         text = text.replace(old, new)
     
-    # ניקוי רווחים מיותרים - אבל שומר על ירידות שורה
     text = re.sub(r'[ \t]+', ' ', text)
     
     return text
+
 
 def extract_time(text):
     """
@@ -126,6 +127,7 @@ def extract_decimal(text):
         return float(match.group(1))
     return 0.0
 
+
 def identify_day_name(text):
     """
     מזהה שם יום בשבוע
@@ -145,20 +147,19 @@ def identify_day_name(text):
         'חמי': 'חמישי',
         'שיש': 'שישי',
         'חמיש': 'חמישי',
-        'גונן': ''  # טעות OCR נפוצה
+        'גונן': ''
     }
     
-    # חיפוש שם מלא
     for day in days_full:
         if day in text:
             return day
     
-    # חיפוש גרסה קצרה
     for short, full in days_short.items():
         if short in text:
             return full if full else None
     
     return None
+
 
 def parse_type_b_line(line):
     """
@@ -170,21 +171,14 @@ def parse_type_b_line(line):
     Returns:
         dict: נתוני השורה או None
     """
-    # חילוץ תאריך
     date = extract_date(line)
     if not date:
         return None
     
-    # חילוץ יום בשבוע
     day = identify_day_name(line)
-    
-    # חילוץ כל הזמנים בשורה
     times = re.findall(r'\b(\d{1,2}:\d{2})\b', line)
-    
-    # חילוץ כל המספרים העשרוניים
     numbers = re.findall(r'(\d+\.\d+)', line)
     
-    # בדיקה - צריך לפחות 2 זמנים ו-4 מספרים
     if len(times) >= 2 and len(numbers) >= 4:
         entry = times[0]
         exit_time = times[1]
@@ -195,7 +189,6 @@ def parse_type_b_line(line):
         overtime_125 = float(numbers[2])
         overtime_150 = float(numbers[3])
         
-        # חילוץ מיקום
         location = None
         location_pattern = r'(?:ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)\s+([א-ת]+)\s+\d{1,2}:'
         location_match = re.search(location_pattern, line)
@@ -217,9 +210,10 @@ def parse_type_b_line(line):
     
     return None
 
+
 def parse_type_a_line(line):
     """
-    מפרסר שורה מדוח Type A - גרסה פשוטה ועמידה
+    מפרסר שורה מדוח Type A
     
     Args:
         line (str): שורה מהדוח
@@ -227,20 +221,17 @@ def parse_type_a_line(line):
     Returns:
         dict: נתוני השורה או None
     """
-    # חיפוש תאריך בפורמט D/M/YY או DD/MM/YY
     date_pattern = r'(\d{1,2})/(\d{1,2})/(\d{2})'
     date_match = re.search(date_pattern, line)
     
     if not date_match:
         return None
     
-    # בניית תאריך
     day = date_match.group(1).zfill(2)
     month = date_match.group(2).zfill(2)
     year = f"20{date_match.group(3)}"
     date = f"{day}/{month}/{year}"
     
-    # חיפוש זמנים - H:MM או HH:MM
     time_pattern = r'(\d{1,2}):(\d{2})'
     times = re.findall(time_pattern, line)
     
@@ -250,15 +241,12 @@ def parse_type_a_line(line):
     entry = f"{times[0][0].zfill(2)}:{times[0][1]}"
     exit_time = f"{times[1][0].zfill(2)}:{times[1][1]}"
     
-    # חיפוש שעות (מספר עשרוני)
     hours_pattern = r'(\d+\.\d{2})'
     hours_matches = re.findall(hours_pattern, line)
     
     if hours_matches:
-        # קח את המספר האחרון (בדרך כלל זה סה"כ השעות)
         total = float(hours_matches[-1])
     else:
-        # אם אין, חשב מהזמנים
         try:
             start_h, start_m = int(times[0][0]), int(times[0][1])
             end_h, end_m = int(times[1][0]), int(times[1][1])
@@ -273,11 +261,9 @@ def parse_type_a_line(line):
         except:
             return None
     
-    # ולידציה בסיסית
     if total <= 0 or total > 24:
         return None
     
-    # יום בשבוע (אופציונלי)
     day_name = identify_day_name(line)
     
     return {
@@ -287,6 +273,7 @@ def parse_type_a_line(line):
         'exit': exit_time,
         'total': total
     }
+
 
 def parse_report(text, report_type):
     """
@@ -299,29 +286,19 @@ def parse_report(text, report_type):
     Returns:
         pandas.DataFrame: טבלה עם הנתונים
     """
-    # ניקוי טקסט
     text = clean_ocr_text(text)
-    
-    # פיצול לשורות
     lines = text.split('\n')
-    
-    # רשימה לאחסון השורות המפורסרות
     parsed_data = []
     
-    print(f"\n📋 סה\"כ שורות בטקסט: {len(lines)}")
-    
     for line in lines:
-        # דילוג על שורות ריקות או קצרות מדי
         line = line.strip()
         if len(line) < 15:
             continue
             
-        # דילוג על שורות כותרת
         skip_keywords = ['תאריך', 'כניסה', 'יציאה', 'מקום', 'הפסקה', 'DTN', 'בע"מ', 'נ.ע.']
         if any(keyword in line for keyword in skip_keywords):
             continue
         
-        # פרסור לפי סוג
         if report_type == 'TYPE_B':
             row_data = parse_type_b_line(line)
         else:
@@ -330,7 +307,6 @@ def parse_report(text, report_type):
         if row_data:
             parsed_data.append(row_data)
     
-    # המרה ל-DataFrame
     if parsed_data:
         df = pd.DataFrame(parsed_data)
         return df
@@ -368,31 +344,3 @@ def extract_summary_info(text, report_type):
         summary['total_days'] = len(re.findall(r'\d{2}/\d{2}/\d{4}', text))
     
     return summary
-
-
-# בדיקת המודול
-if __name__ == "__main__":
-    print("=" * 70)
-    print("בדיקת Parser - חילוץ נתונים מטקסט")
-    print("=" * 70)
-    
-    # דוגמה - טקסט Type B
-    sample_text = """נ.ע. הנשר DTN ND בע"מ
-תאריך מקום כניסה יציאה הפסקה סה"כ 100% 125% 150%
-01/02/2023 יום רביעי גונן 08:00 16:00 00:30 7.50 7.50 0.00 0.00 0.00
-02/02/2023 יום חמישי גונן 08:00 16:00 00:30 7.50 7.50 0.00 0.00 0.00
-05/02/2023 יום ראשון גונן 08:00 16:00 00:30 7.50 7.50 0.00 0.00 0.00"""
-    
-    print("\n📄 טקסט לדוגמה (Type B):")
-    print(sample_text[:200] + "...")
-    
-    print("\n🔍 מפרסר...")
-    df = parse_report(sample_text, 'TYPE_B')
-    
-    print(f"\n✓ נמצאו {len(df)} שורות נתונים")
-    print("\n📊 תצוגה ראשונה של הטבלה:")
-    print(df.head())
-    
-    print("\n" + "=" * 70)
-    print("✅ Parser עובד!")
-    print("=" * 70)
